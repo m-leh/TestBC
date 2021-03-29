@@ -4,8 +4,10 @@ import android.app.Application
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.viewModelScope
 import com.my.data.Repository
 import com.my.domain.Album
+import kotlinx.coroutines.launch
 
 class AlbumsViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -14,7 +16,9 @@ class AlbumsViewModel(application: Application) : AndroidViewModel(application) 
 
     fun open() {
         repository = Repository(getApplication())
-        repository.open()
+        viewModelScope.launch {
+            repository.refreshAlbums()
+        }
     }
 
     fun loadAlbums(): LiveData<List<Album>>? {
@@ -27,10 +31,6 @@ class AlbumsViewModel(application: Application) : AndroidViewModel(application) 
 
     fun loadAlbumIds(): LiveData<List<Long>>? {
         return repository.loadAlbumIds()
-    }
-
-    fun close() {
-        repository.close()
     }
 
 }

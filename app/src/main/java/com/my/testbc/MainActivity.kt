@@ -102,10 +102,4 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
                 })
         }
     }
-
-    override fun onDestroy() {
-        mViewModel.close()
-        super.onDestroy()
-    }
-
 }

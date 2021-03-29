@@ -1,15 +1,15 @@
 package com.my.data
 
 import android.content.Context
-import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.Transformations
 import com.my.data.local.AppDatabase
+import com.my.data.local.asDomainModel
 import com.my.data.remote.RetrofitClient
+import com.my.data.remote.asDatabaseModel
 import com.my.domain.Album
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
 
 /**
@@ -20,44 +20,33 @@ open class Repository(context: Context) {
     // DAO
     private val dataDAO = AppDatabase.getInstance(context)?.dataDao()
 
-    // To be able to cancel launched coroutines (if any)
-    private val job = Job()
+    val albums: LiveData<List<Album>> = Transformations.map(dataDAO?.loadAlbums()!!) {
+        it?.asDomainModel()
+    }
 
-    // The coroutine runs using the dispatcher by default
-    private val coroutineScope = CoroutineScope(job + Dispatchers.Default)
-
-    @VisibleForTesting
-    var onAlbumsChange: (List<Album>) -> Unit = { albums ->
-        coroutineScope.launch {
-            dataDAO?.removeAll()
-            dataDAO?.insertAll(albums)
+    suspend fun refreshAlbums() {
+        withContext(Dispatchers.IO) {
+            val albums = RetrofitClient(
+                HttpUrl.parse("https://static.leboncoin.fr/")!!
+            ).apiInterface.getAlbums()
+            dataDAO?.insertAll(albums.asDatabaseModel())
         }
     }
 
-    fun open() {
-        val retrofitBuilder =
-            RetrofitClient(
-                HttpUrl.parse("https://static.leboncoin.fr/")!!,
-                onAlbumsChange
-            )
-        retrofitBuilder.loadData()
-    }
-
     fun loadAlbums(): LiveData<List<Album>>? {
-        return dataDAO?.loadAlbums()
+        return Transformations.map(dataDAO?.loadAlbums()!!) {
+            it?.asDomainModel()
+        }
     }
 
     fun loadAlbums(id: Long): LiveData<List<Album>>? {
-        return dataDAO?.loadAlbumById(id)
+        return Transformations.map(dataDAO?.loadAlbumById(id)!!) {
+            it?.asDomainModel()
+        }
     }
 
     fun loadAlbumIds(): LiveData<List<Long>>? {
         return dataDAO?.loadAlbumIds()
-    }
-
-    fun close() {
-        AppDatabase.destroyInstance()
-        job.cancel()
     }
 
 }
