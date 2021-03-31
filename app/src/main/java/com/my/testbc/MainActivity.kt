@@ -21,13 +21,15 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
         const val ALL_ALBUMS_POSITION = 0
     }
 
-    private lateinit var mAlbumsRecyclerView: RecyclerView
-    private lateinit var mAlbumIdsSpinner: Spinner
-    private var mSpinnerPosition = 0
-    private var mPositionInRecyclerView = -1
+    val mViewModel: AlbumsViewModel by viewModel()
 
-    @VisibleForTesting
-    lateinit var mViewModel: AlbumsViewModel
+    private lateinit var mAlbumsRecyclerView: RecyclerView
+
+    private lateinit var mAlbumIdsSpinner: Spinner
+
+    private var mSpinnerPosition = 0
+
+    private var mPositionInRecyclerView = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,10 +42,6 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
             mSpinnerPosition = savedInstanceState.getInt(ALBUM_ID_POSITION)
             mPositionInRecyclerView = savedInstanceState.getInt(RECYCLER_VIEW_POSITION)
         }
-
-        mViewModel =
-            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-                .create(AlbumsViewModel::class.java)
 
         mViewModel.open()
         mViewModel.loadAlbumIds()?.observe(this,
