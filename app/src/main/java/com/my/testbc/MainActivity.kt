@@ -5,13 +5,13 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Spinner
-import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.my.domain.Album
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
 
@@ -72,9 +72,21 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
 
     private fun updateAlbums(albums: List<Album>?) {
         if (albums != null) {
-            val adapter = AlbumsAdapter(this, albums)
-            mAlbumsRecyclerView.adapter = adapter
-            if (mPositionInRecyclerView != -1 && mPositionInRecyclerView < adapter.itemCount) {
+            if (mAlbumsRecyclerView.adapter == null) {
+                val diffCallBack = object : ItemCallback<Album>() {
+                    override fun areItemsTheSame(oldItem: Album, newItem: Album): Boolean {
+                        return oldItem.id == newItem.id
+                    }
+
+                    override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean {
+                        return oldItem == newItem
+                    }
+                }
+                val adapter = AlbumsAdapter(diffCallBack)
+                mAlbumsRecyclerView.adapter = adapter
+            }
+            (mAlbumsRecyclerView.adapter as AlbumsAdapter).submitList(albums)
+            if (mPositionInRecyclerView != -1 && mPositionInRecyclerView < albums.size) {
                 mAlbumsRecyclerView.scrollToPosition(mPositionInRecyclerView)
             }
         }
